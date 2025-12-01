@@ -1,56 +1,181 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-// Desafio Tetris Stack
-// Tema 3 - Integração de Fila e Pilha
-// Este código inicial serve como base para o desenvolvimento do sistema de controle de peças.
-// Use as instruções de cada nível para desenvolver o desafio.
+#define TAM_FILA 5
+#define TAM_PILHA 3
 
+// ==== Estrutura da peça ====
+typedef struct {
+    char nome;
+    int id;
+} Peca;
+
+// ===== FILA CIRCULAR ===== //
+Peca fila[TAM_FILA];
+int inicio = 0;
+int fim = 0;
+
+// ===== PILHA DE RESERVA ===== //
+Peca pilha[TAM_PILHA];
+int topo = -1;
+
+int proximoID = 1;
+
+// ==== Gerar peça automática ====
+Peca gerarPeca() {
+    Peca p;
+    char tipos[4] = {'I', 'O', 'T', 'L'};
+    p.nome = tipos[rand() % 4];
+    p.id = proximoID++;
+    return p;
+}
+
+// === Operações da Fila ===
+void enqueue(Peca p) {
+    fila[fim] = p;
+    fim = (fim + 1) % TAM_FILA;
+}
+
+Peca dequeue() {
+    Peca p = fila[inicio];
+    inicio = (inicio + 1) % TAM_FILA;
+    return p;
+}
+
+// === Operações da Pilha ===
+void push(Peca p) {
+    topo++;
+    pilha[topo] = p;
+}
+
+Peca pop() {
+    Peca p = pilha[topo];
+    topo--;
+    return p;
+}
+
+// ===== Exibir Estado =====
+void exibirEstado() {
+    printf("\n=========== ESTADO ATUAL ===========\n");
+
+    printf("\nFila (5 peças):\n");
+    int i = inicio;
+    for (int c = 0; c < TAM_FILA; c++) {
+        printf(" %c (id %d)\n", fila[i].nome, fila[i].id);
+        i = (i + 1) % TAM_FILA;
+    }
+
+    printf("\nPilha de reserva:\n");
+    if (topo == -1) {
+        printf(" <vazia>\n");
+    } else {
+        for (int i = topo; i >= 0; i--) {
+            printf(" %c (id %d)\n", pilha[i].nome, pilha[i].id);
+        }
+    }
+
+    printf("\n=====================================\n");
+}
+
+// ===== Trocar peça atual (fila <-> topo da pilha) =====
+void trocarPeçaAtual() {
+    if (topo == -1) {
+        printf("\nERRO: Não há peça na pilha para trocar.\n");
+        return;
+    }
+
+    int idx = inicio;
+    Peca temp = fila[idx];
+    fila[idx] = pilha[topo];
+    pilha[topo] = temp;
+
+    printf("\nPeça da frente da fila e topo da pilha foram trocadas.\n");
+}
+
+// ===== Troca múltipla (3 peças da fila <-> 3 da pilha) =====
+void trocaMultipla() {
+    if (topo < 2) {
+        printf("\nERRO: A pilha não tem 3 peças para realizar a troca múltipla.\n");
+        return;
+    }
+
+    int idx = inicio;
+    for (int i = 0; i < 3; i++) {
+        Peca temp = fila[idx];
+        fila[idx] = pilha[topo - i];
+        pilha[topo - i] = temp;
+
+        idx = (idx + 1) % TAM_FILA;
+    }
+
+    printf("\nAs 3 primeiras peças da fila foram trocadas com as 3 peças da pilha.\n");
+}
+
+// ================= MAIN ==================
 int main() {
+    int opcao;
 
-    // 🧩 Nível Novato: Fila de Peças Futuras
-    //
-    // - Crie uma struct Peca com os campos: tipo (char) e id (int).
-    // - Implemente uma fila circular com capacidade para 5 peças.
-    // - Crie funções como inicializarFila(), enqueue(), dequeue(), filaCheia(), filaVazia().
-    // - Cada peça deve ser gerada automaticamente com um tipo aleatório e id sequencial.
-    // - Exiba a fila após cada ação com uma função mostrarFila().
-    // - Use um menu com opções como:
-    //      1 - Jogar peça (remover da frente)
-    //      0 - Sair
-    // - A cada remoção, insira uma nova peça ao final da fila.
+    // Inicializa fila com 5 peças
+    for (int i = 0; i < TAM_FILA; i++) {
+        enqueue(gerarPeca());
+    }
 
+    do {
+        exibirEstado();
 
+        printf("\nMENU:\n");
+        printf("1 - Jogar peça\n");
+        printf("2 - Reservar peça (fila → pilha)\n");
+        printf("3 - Usar peça reservada (pop)\n");
+        printf("4 - Trocar peça atual (fila ↔ pilha)\n");
+        printf("5 - Troca múltipla (3 fila ↔ 3 pilha)\n");
+        printf("6 - Exibir estado novamente\n");
+        printf("0 - Sair\n");
+        printf("Opção: ");
+        scanf("%d", &opcao);
 
-    // 🧠 Nível Aventureiro: Adição da Pilha de Reserva
-    //
-    // - Implemente uma pilha linear com capacidade para 3 peças.
-    // - Crie funções como inicializarPilha(), push(), pop(), pilhaCheia(), pilhaVazia().
-    // - Permita enviar uma peça da fila para a pilha (reserva).
-    // - Crie um menu com opção:
-    //      2 - Enviar peça da fila para a reserva (pilha)
-    //      3 - Usar peça da reserva (remover do topo da pilha)
-    // - Exiba a pilha junto com a fila após cada ação com mostrarPilha().
-    // - Mantenha a fila sempre com 5 peças (repondo com gerarPeca()).
+        if (opcao == 1) {
+            // Jogar
+            Peca p = dequeue();
+            printf("\nPeça jogada: %c (id %d)\n", p.nome, p.id);
 
+            enqueue(gerarPeca());
+        }
+        else if (opcao == 2) {
+            // Reservar
+            if (topo == TAM_PILHA - 1) {
+                printf("\nERRO: Pilha cheia!\n");
+            } else {
+                Peca p = dequeue();
+                push(p);
+                printf("\nPeça reservada: %c (id %d)\n", p.nome, p.id);
 
-    // 🔄 Nível Mestre: Integração Estratégica entre Fila e Pilha
-    //
-    // - Implemente interações avançadas entre as estruturas:
-    //      4 - Trocar a peça da frente da fila com o topo da pilha
-    //      5 - Trocar os 3 primeiros da fila com as 3 peças da pilha
-    // - Para a opção 4:
-    //      Verifique se a fila não está vazia e a pilha tem ao menos 1 peça.
-    //      Troque os elementos diretamente nos arrays.
-    // - Para a opção 5:
-    //      Verifique se a pilha tem exatamente 3 peças e a fila ao menos 3.
-    //      Use a lógica de índice circular para acessar os primeiros da fila.
-    // - Sempre valide as condições antes da troca e informe mensagens claras ao usuário.
-    // - Use funções auxiliares, se quiser, para modularizar a lógica de troca.
-    // - O menu deve ficar assim:
-    //      4 - Trocar peça da frente com topo da pilha
-    //      5 - Trocar 3 primeiros da fila com os 3 da pilha
+                enqueue(gerarPeca());
+            }
+        }
+        else if (opcao == 3) {
+            // Usar peça reservada
+            if (topo == -1) {
+                printf("\nERRO: Pilha vazia! Nada a usar.\n");
+            } else {
+                Peca p = pop();
+                printf("\nPeça usada: %c (id %d)\n", p.nome, p.id);
 
+                enqueue(gerarPeca());
+            }
+        }
+        else if (opcao == 4) {
+            trocarPeçaAtual();
+        }
+        else if (opcao == 5) {
+            trocaMultipla();
+        }
+
+    } while (opcao != 0);
+
+    printf("\nPrograma encerrado.\n");
 
     return 0;
 }
+
 
